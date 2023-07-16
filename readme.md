@@ -11,7 +11,7 @@ An approach on how to convert this is done [in this Stack Overflow Post](https:/
 
 ### Installing components
 
-To install Chromedriver I followed [this guide](https://www.kenst.com/installing-chromedriver-on-mac-osx/#:~:text=The%20easiest%20way%20to%20install,seeing%20it%20returns%20a%20version.). 
+To install Chromedriver I followed [this guide](https://www.kenst.com/installing-chromedriver-on-mac-osx/#:~:text=The%20easiest%20way%20to%20install,seeing%20it%20returns%20a%20version.). It basically boils down to `brew install cask chromedriver`. 
 **Note**: I couldn't execute it at first as it was forbidden by Apple policies. So I had to `xattr -d com.apple.quarantine /usr/local/bin/chromedriver` to remove the quarantine flag.
 
 To install Selenium for my jupyter notebook I followed [this guide](https://shanyitan.medium.com/how-to-install-selenium-and-run-it-successfully-via-jupyter-lab-c3f50d22a0d4)
