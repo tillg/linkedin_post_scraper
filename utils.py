@@ -83,7 +83,7 @@ def readDictFromFile(*, fullFilename: str) -> Dict:
     except IOError as e:
         log("readDictFromFile", "Error",
             "Could not open file ", fullFilename, "Exception:", e)
-        exit()
+        raise e
     return data
 
 
