@@ -1,6 +1,6 @@
 .DS_Store
 credentials.txt
-set_secrets.py
+_set_secrets.sh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
