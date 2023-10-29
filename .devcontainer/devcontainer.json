@@ -1,0 +1,16 @@
+{
+    "name": "linkedin_post_scraper",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "linkedin_scraper",
+    "workspaceFolder": "/workspace/",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "yzhang.markdown-all-in-one",
+                "ms-toolsai.jupyter-keymap",
+                "ms-python.autopep8",
+                "ms-azuretools.vscode-docker"
+            ]
+        }
+    }
+}

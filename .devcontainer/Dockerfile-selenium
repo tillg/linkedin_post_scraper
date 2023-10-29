@@ -1,0 +1,6 @@
+FROM selenium/standalone-chrome
+
+RUN sudo apt-get update -y 
+RUN sudo apt-get upgrade -y
+RUN sudo apt-get install -y iputils-ping
+RUN sudo apt-get install -y curl

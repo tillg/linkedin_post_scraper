@@ -1,0 +1,60 @@
+version: '3.4'
+
+services:
+
+  linkedin_scraper:
+    image: linkedin_scraper
+    build:
+      dockerfile: .devcontainer/Dockerfile
+      context: ..
+    container_name: linkedin_scraper
+    networks:
+      - linkedin_scraper
+    restart: unless-stopped
+    volumes:
+      - ..:/workspace:cached
+      - ./data/blogs:/site/_posts
+      - ./data/site:/site/_site
+    command: /bin/sh -c "while sleep 1000; do :; done"
+
+  selenium:
+    image: selenium
+    build:
+      dockerfile: Dockerfile-selenium
+    container_name: selenium
+    shm_size: 2gb
+    networks:
+      - linkedin_scraper
+    restart: unless-stopped
+    ports:
+      - 4444:4444
+      - 7900:7900
+  # nginx:
+  #   image: nginx
+  #   container_name: nginx
+  #   ports:
+  #     - 80:80
+  #   #   image: {{ nginx_certbot_image }}
+  #   #   container_name: nginx
+  #   #   restart: unless-stopped
+  #   #   networks:
+  #   #     - mgm_news_network
+  #   #   ports:
+  #   #     - '80:80'
+  #   #     - '443:443'
+  #   #   environment:
+  #   #     CERTBOT_EMAIL: {{ certbot_email }}
+  #   #     SERVER_URL: {{ server_url }}
+  #   #     USE_LOCAL_CA: {{ certbot_use_local_ca }}
+  #   #     DEBUG: {{ certbot_debug }}
+  #   networks:
+  #     - linkedin_scraper
+  #   volumes:
+  #     - ./data/site:/usr/share/nginx/html:ro
+  #     - ./data/logs:/logs
+  #     - ./data/site/nginx_secrets:/etc/letsencrypt
+  #     - ./data/site/nginx_conf.d:/etc/nginx/user_conf.d
+
+networks:
+  linkedin_scraper:
+    name: linkedin_scraper
