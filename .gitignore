@@ -1,6 +1,7 @@
 .DS_Store
 credentials.txt
 set_secrets.sh
+.bash_history
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

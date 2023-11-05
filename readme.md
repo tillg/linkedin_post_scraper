@@ -2,11 +2,40 @@
 
 Scraping posts of a company from linkedin and saving them in markdown files.
 
+## Starting the environment
+
+In order to start the environment, open `VScode` and start it in the container. Usually VScode notices that there is a `.devcontainer` 
+
+## Todos
+
+* React properly if linkedin returns the code-poage when asking to log in
+* Add container that re-builds blog if scraper added data
+* Add nginx container that serves blog
+
 ## Problems / Solutions / Readings
+
+### Keeping the Terminal history
+
+It's annoying that when you rebuild the containers that make up your dev environment, the bash history gets lost. [Here](https://code.visualstudio.com/remote/advancedcontainers/persist-bash-history) is a way to fix it. It's a bit cumbersome but you only have to set it up once, then it (hopefully) works forever 😜
+
+### Installing VScode extensions that survive a rebuild
+
+### Using Selenium from within Docker
+Installing Selenium to run within a container is rather tricky, that's why we use a pre-built container from [SeleniumHQ](https://github.com/SeleniumHQ/docker-selenium). We launch the Selenium container and remote-controle the Chromedriver. 
+In order to see and understand what is happening in the Selenium container there are 2 perspectives:
+
+* A [VNC terminal](http://localhost:7900/?autoconnect=1&resize=scale&password=secret) in which you see the remote-controlled browser
+* A [management console UI](http://localhost:4444/ui) in which you see what _selenium jobs_ are running.
+
 
 ### Chat-GPT in Jupyter
 
 I followed [this guide](https://blog.jupyter.org/generative-ai-in-jupyter-3f7174824862) to get Chat-GPT running in Jupyter.
+In order to get it running:
+
+* Start jupyter lab (`jupyter lab` 😜)
+* In the left bar select the chat icon at the bottom
+* Go in the settings (⚙️ symbol) and select the models and enter your Keys
 
 ### Getting the date of posts
 
