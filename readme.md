@@ -20,9 +20,8 @@ Following the explanation [Develop on a remote Docker host](https://code.visuals
 
 * Spun up a machine on AWS (Ubuntu 22.04.3 LTS, t2.xlarge ~ 2 vCPU, 16 GB Mem, 50 GB disk)
 * SSHed onto the machine (`ssh ubuntu@machine_ip`)
-* Installed Docker according to [this guide](https://docs.docker.com/engine/install/ubuntu/). Don't forget the steps in [Linux post-installation steps for Docker Engine](https://docs.docker.com/engine/install/linux-postinstall/)!
-* 
-
+* Installed Docker according to [this guide](https://docs.docker.com/engine/install/ubuntu/). 
+* Don't forget the steps in [Linux post-installation steps for Docker Engine](https://docs.docker.com/engine/install/linux-postinstall/)!
 
 ### Keeping the Terminal history
 
