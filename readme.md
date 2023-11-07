@@ -14,6 +14,16 @@ In order to start the environment, open `VScode` and start it in the container. 
 
 ## Problems / Solutions / Readings
 
+### Working on a remote host
+
+Following the explanation [Develop on a remote Docker host](https://code.visualstudio.com/remote/advancedcontainers/develop-remote-host) I tried the way called [Connect using the Docker CLI](https://code.visualstudio.com/remote/advancedcontainers/develop-remote-host#_connect-using-the-docker-cli):
+
+* Spun up a machine on AWS (Ubuntu 22.04.3 LTS, t2.xlarge ~ 2 vCPU, 16 GB Mem, 50 GB disk)
+* SSHed onto the machine (`ssh ubuntu@machine_ip`)
+* Installed Docker according to [this guide](https://docs.docker.com/engine/install/ubuntu/). Don't forget the steps in [Linux post-installation steps for Docker Engine](https://docs.docker.com/engine/install/linux-postinstall/)!
+* 
+
+
 ### Keeping the Terminal history
 
 It's annoying that when you rebuild the containers that make up your dev environment, the bash history gets lost. [Here](https://code.visualstudio.com/remote/advancedcontainers/persist-bash-history) is a way to fix it. It's a bit cumbersome but you only have to set it up once, then it (hopefully) works forever 😜
