@@ -1,7 +1,7 @@
 {
     "name": "linkedin_post_scraper",
     "dockerComposeFile": "docker-compose.yml",
-    "service": "linkedin_scraper",
+    "service": "linkedin_post_scraper",
     "workspaceFolder": "/workspace/",
     "customizations": {
         "vscode": {

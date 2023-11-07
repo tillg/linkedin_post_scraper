@@ -2,20 +2,20 @@ version: '3.4'
 
 services:
 
-  linkedin_scraper:
-    image: linkedin_scraper
+  linkedin_post_scraper:
+    image: linkedin_post_scraper
     build:
       dockerfile: .devcontainer/Dockerfile
       context: ..
-    container_name: linkedin_scraper
+    container_name: linkedin_post_scraper
     networks:
       - linkedin_scraper
     restart: unless-stopped
     volumes:
       - ..:/workspace:cached
-      - ./data/blogs:/site/_posts
-      - ./data/site:/site/_site
-      - ./data/commandhistory:/commandhistory
+      - /data/blogs:/site/_posts
+      - /data/site:/site/_site
+      - /data/commandhistory:/commandhistory
     command: /bin/sh -c "while sleep 1000; do :; done"
 
   selenium:
