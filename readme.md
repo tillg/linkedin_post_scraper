@@ -34,6 +34,8 @@ Port forfarding takes some attention, but is nicely explainer [here](https://www
 
 It's annoying that when you rebuild the containers that make up your dev environment, the bash history gets lost. [Here](https://code.visualstudio.com/remote/advancedcontainers/persist-bash-history) is a way to fix it. It's a bit cumbersome but you only have to set it up once, then it (hopefully) works forever 😜
 
+😢 Did not manage to get this working...
+
 ### Installing VScode extensions that survive a rebuild
 
 ### Using Selenium from within Docker

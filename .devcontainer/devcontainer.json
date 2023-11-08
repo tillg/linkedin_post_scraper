@@ -4,11 +4,19 @@
     "service": "linkedin_post_scraper",
     "workspaceFolder": "/workspace/",
     "forwardPorts": [
-        8888
+        8888,
+        "selenium:4444",
+        "selenium:7900"
     ],
     "portsAttributes": {
         "8888": {
             "label": "Jupyter Lab - once started in linkedin_post_scraper container"
+        },
+        "selenium:4444": {
+            "label": "Selenium Management Console"
+        },
+        "selenium:7900": {
+            "label": "Selenium VNC terminal"
         }
     },
     "customizations": {
