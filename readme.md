@@ -6,6 +6,8 @@ Scraping posts of a company from linkedin and saving them in markdown files.
 
 In order to start the environment, open `VScode` and start it in the container. Usually VScode notices that there is a `.devcontainer` 
 
+In the terminal launch the scraper with `./linkedin_post_scraper.py`.
+
 ## Todos
 
 * React properly if linkedin returns the code-poage when asking to log in
