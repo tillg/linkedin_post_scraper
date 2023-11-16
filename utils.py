@@ -24,39 +24,43 @@ class color:
 
 internalDateFormat = "%Y-%m-%d %H:%M:%S"
 
+
 def areVariablesSet(varNames) -> bool:
-    #log("areVariablesSet", "Checking if vars are set: ", varNames)
+    # log("areVariablesSet", "Checking if vars are set: ", varNames)
     for varName in varNames:
-        if not isVariableSet(varName): 
+        if not isVariableSet(varName):
             return False
-    #log("areVariablesSet", "All vars are set: ", varNames)    
+    # log("areVariablesSet", "All vars are set: ", varNames)
     return True
+
 
 def isVariableSet(varName: str) -> bool:
     if (os.getenv(varName) is None) or (os.getenv(varName) == ""):
-        log("isVariableSet", "Error", f'Variable {varName} is not set in environment.')
+        log("isVariableSet", "Error",
+            f'Variable {varName} is not set in environment.')
         return False
     return True
 
+
 def writeDictToFile(*, dictionary: Dict, fullFilename: str) -> Dict:
     """Writes a dictionary to a file. Also updates the _stats element."""
-    #log("writeDictToFile", "Len of dict to write: ", len(dictionary), " type: ", type(dictionary))
+    # log("writeDictToFile", "Len of dict to write: ", len(dictionary), " type: ", type(dictionary))
     nowStr = getNowAsString()
     dictionary.setdefault("_stats", {"lastWritten": nowStr})
     dictionary["_stats"]["lastWritten"] = nowStr
     dictionary["_stats"]["counter"] = len(dictionary)-1
     stats = dictionary["_stats"]
     del dictionary["_stats"]
-    #log("writeDictToFile", "Len of dict after deleting _stats: ", len(dictionary), " type: ", type(dictionary))
+    # log("writeDictToFile", "Len of dict after deleting _stats: ", len(dictionary), " type: ", type(dictionary))
     dictionary = dict(sorted(dictionary.items()))
-    #log("writeDictToFile", "Len of dict after sorting: ", len(dictionary), " type: ", type(dictionary))
+    # log("writeDictToFile", "Len of dict after sorting: ", len(dictionary), " type: ", type(dictionary))
     sortedDictionary = {"_stats": stats, **dictionary}
-    #log("writeDictToFile", "Len of sorted dict to write: ", len(sortedDictionary), " type: ", type(dictionary))
+    # log("writeDictToFile", "Len of sorted dict to write: ", len(sortedDictionary), " type: ", type(dictionary))
     dictDump = json.dumps(sortedDictionary, sort_keys=False, indent=2)
 
     # Make sure that the directory in which we want to write exists.
     directory = os.path.dirname(os.path.abspath(fullFilename))
-    #log('writeDictToFile', 'Writing to dir ', directory)
+    # log('writeDictToFile', 'Writing to dir ', directory)
     try:
         os.makedirs(directory)
     except FileExistsError:
@@ -67,14 +71,15 @@ def writeDictToFile(*, dictionary: Dict, fullFilename: str) -> Dict:
         file.write(dictDump)
     return sortedDictionary
 
+
 def readDictFromFile(*, fullFilename: str) -> Dict:
     """Reads a dictionary from a file. Chacks that the dictionary read has a _stats.lastWritten entry."""
     data = {}
     try:
         with open(fullFilename) as file:
             data = json.load(file)
-            #log("readDictFromFile", "Read file ", fullFilename, " content: ", data)
-            if data == None: 
+            # log("readDictFromFile", "Read file ", fullFilename, " content: ", data)
+            if data == None:
                 return {}
             if data.get("_stats", {}).get("lastWritten") == None:
                 log("readDictFromFile", "Warning: Read file ", fullFilename,
@@ -91,7 +96,8 @@ def transformDate2String(dateToTransform: datetime) -> str:
     try:
         dateStr = dateToTransform.strftime(internalDateFormat)
     except:
-        log("transformDate2String", "Error transforming date: ", dateToTransform, "Continuing with empty date string.")
+        log("transformDate2String", "Error transforming date: ",
+            dateToTransform, "Continuing with empty date string.")
         dateStr = ""
     return dateStr
 
@@ -179,7 +185,7 @@ def loadPage(httpSession: Session, url: str) -> Optional[Response]:
 
 def createLoggedInHttpSession(*, loginUrl: str, username: str, password: str) -> Session:
     s = Session()
-    #log('createLoggedInHttpSession', 'Logging in to ', loginUrl)
+    # log('createLoggedInHttpSession', 'Logging in to ', loginUrl)
     login_data = {"os_username": username,  # CONFLUENCE_USER,
                   "os_password": password}  # CONFLUENCE_PASSWORD}
     try:
