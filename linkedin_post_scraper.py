@@ -22,6 +22,7 @@ import tkinter as tk
 import json
 import hashlib
 
+from utils import get_logger, transformDate2String, transformString2Date, getNowAsString, getMinDateAsString, stripBlanks, writeDictToFile, readDictFromFile
 
 # Define global constants
 PAGE = 'https://www.linkedin.com/company/mgm-technology-partners-gmbh'
@@ -56,138 +57,6 @@ except:
     password = input('Enter your linkedin password: ')
     f.write("username={}, password={}".format(username,password))
     f.close()
-
-
-## Utils
-
-def get_logger(name, log_level=logging.WARN):
-    # Get a logger with the given name
-    logger = logging.getLogger(name)
-    logger.propagate = False  # Disable propagation to the root logger. Makes sense in Jupyter only...
-    logger.setLevel(log_level)
-
-    # Check if the logger has handlers already
-    if not logger.handlers:
-        # Create a handler
-        handler = logging.StreamHandler()
-
-        # Set a format that includes the logger's name
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-
-    return logger
-    
-def transformDate2String(dateToTransform: datetime) -> str:
-    logger = get_logger(transformDate2String.__name__)
-    try:
-        dateStr = dateToTransform.strftime(INTERNAL_DATE_FORMAT)
-    except:
-        logger.error(f"Error transforming date: {dateToTransform}. Continuing with empty date string.")
-        dateStr = ""
-    return dateStr
-
-def transformString2Date(stringToTransform: str) -> Optional[datetime]:
-    """Transforms a String that holds a date in my standard format to a Date. 
-        In case it can't transform it, it return None."""
-    try:
-        dateObj = datetime.strptime(stringToTransform, INTERNAL_DATE_FORMAT)
-    except:
-        log("transformString2Date", "Error transforming string to date: ",
-            stringToTransform)
-        dateObj = None
-    return dateObj
-
-def getNowAsString() -> str:
-    return transformDate2String(datetime.now())
-
-def getMinDateAsString() -> str:
-    return transformDate2String(datetime(1970, 1, 1))
-
-def stripBlanks(str):
-    return str.strip(" \t")
-import logging
-
-
-def writeDictToFile(*, dictionary: Dict, fullFilename: str) -> Dict:
-    """Writes a dictionary to a file. Also updates the _stats element."""
-    logger = get_logger(writeDictToFile.__name__, logging.INFO)
-    if not isinstance(dictionary, dict):
-        raise TypeError("Expected a dictionary, but got a " + str(type(dictionary)))
-    #log("writeDictToFile", "Len of dict to write: ", len(dictionary), " type: ", type(dictionary))
-    nowStr = getNowAsString()
-    dictionary.setdefault("_stats", {"lastWritten": nowStr})
-    dictionary["_stats"]["lastWritten"] = nowStr
-    dictionary["_stats"]["counter"] = len(dictionary)-1
-    stats = dictionary["_stats"]
-    del dictionary["_stats"]
-    #log("writeDictToFile", "Len of dict after deleting _stats: ", len(dictionary), " type: ", type(dictionary))
-    dictionary = dict(sorted(dictionary.items()))
-    #log("writeDictToFile", "Len of dict after sorting: ", len(dictionary), " type: ", type(dictionary))
-    sortedDictionary = {"_stats": stats, **dictionary}
-    #log("writeDictToFile", "Len of sorted dict to write: ", len(sortedDictionary), " type: ", type(dictionary))
-    dictDump = json.dumps(sortedDictionary, sort_keys=False, indent=2)
-
-    # Make sure that the directory in which we want to write exists.
-    directory = os.path.dirname(os.path.abspath(fullFilename))
-    #log('writeDictToFile', 'Writing to dir ', directory)
-    try:
-        os.makedirs(directory)
-    except FileExistsError:
-        # directory already exists, so no need to create it - all good
-        pass
-
-    with open(fullFilename, 'w') as file:
-        file.write(dictDump)
-    return sortedDictionary
-
-def readDictFromFile(*, fullFilename: str) -> Dict:
-    """Reads a dictionary from a file. Chacks that the dictionary read has a _stats.lastWritten entry."""
-    logger = get_logger(readDictFromFile.__name__, logging.INFO)
-    data = {}
-    try:
-        with open(fullFilename, "r+") as file:
-            data = json.load(file)
-            if data == None: 
-                return {}
-            if data.get("_stats", {}).get("lastWritten") == None:
-                logger.warning(f"Read file {fullFilename} successfully but does not contain _stats.lastWritten.")
-            return data
-    except IOError as e:
-        logger.warning(f"Could not open file {fullFilename}")
-        raise e
-    return data
-
-def test_writeDictToFile():
-    data = {
-        "hello": "world",
-        "now": "what"
-    }
-    writeDictToFile(dictionary=data, fullFilename="test.json")
-
-def test_readDictFromFile():
-    data = {
-        "hello": "world",
-        "now": "what"
-    }
-    FILENAME = "test.json"
-
-    # Write and then read it
-    writeDictToFile(dictionary=data, fullFilename=FILENAME)
-    data2 = readDictFromFile(fullFilename=FILENAME)
-
-    # Delete test data, try to read it - even though it doesn't exist
-    try:
-        os.remove(FILENAME)
-    except FileNotFoundError:
-        pass
-    try:
-        data3 = readDictFromFile(fullFilename=FILENAME)
-    except:
-        print("All good, I am in an exception as I expected it to be")
-
-test_readDictFromFile()
-
 
 # ## Login to LinkedIn
 

@@ -12,7 +12,6 @@ In the terminal launch the scraper with `./linkedin_post_scraper.py`.
 
 * React properly if linkedin returns the code-poage when asking to log in
 * Add container that re-builds blog if scraper added data
-* Add nginx container that serves blog
 
 ## Problems / Solutions / Readings
 

@@ -25,6 +25,27 @@ class color:
 internalDateFormat = "%Y-%m-%d %H:%M:%S"
 
 
+def get_logger(name, log_level=logging.WARN):
+    # Get a logger with the given name
+    logger = logging.getLogger(name)
+    # Disable propagation to the root logger. Makes sense in Jupyter only...
+    logger.propagate = False
+    logger.setLevel(log_level)
+
+    # Check if the logger has handlers already
+    if not logger.handlers:
+        # Create a handler
+        handler = logging.StreamHandler()
+
+        # Set a format that includes the logger's name
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+
+    return logger
+
+
 def areVariablesSet(varNames) -> bool:
     # log("areVariablesSet", "Checking if vars are set: ", varNames)
     for varName in varNames:
@@ -44,6 +65,10 @@ def isVariableSet(varName: str) -> bool:
 
 def writeDictToFile(*, dictionary: Dict, fullFilename: str) -> Dict:
     """Writes a dictionary to a file. Also updates the _stats element."""
+    logger = get_logger(writeDictToFile.__name__, logging.INFO)
+    if not isinstance(dictionary, dict):
+        raise TypeError("Expected a dictionary, but got a " +
+                        str(type(dictionary)))
     # log("writeDictToFile", "Len of dict to write: ", len(dictionary), " type: ", type(dictionary))
     nowStr = getNowAsString()
     dictionary.setdefault("_stats", {"lastWritten": nowStr})
@@ -74,30 +99,63 @@ def writeDictToFile(*, dictionary: Dict, fullFilename: str) -> Dict:
 
 def readDictFromFile(*, fullFilename: str) -> Dict:
     """Reads a dictionary from a file. Chacks that the dictionary read has a _stats.lastWritten entry."""
+    logger = get_logger(readDictFromFile.__name__, logging.INFO)
     data = {}
     try:
-        with open(fullFilename) as file:
+        with open(fullFilename, "r+") as file:
             data = json.load(file)
-            # log("readDictFromFile", "Read file ", fullFilename, " content: ", data)
             if data == None:
                 return {}
             if data.get("_stats", {}).get("lastWritten") == None:
-                log("readDictFromFile", "Warning: Read file ", fullFilename,
-                    " successfully but does not contain _stats.lastWritten.")
+                logger.warning(
+                    f"Read file {fullFilename} successfully but does not contain _stats.lastWritten.")
             return data
     except IOError as e:
-        log("readDictFromFile", "Error",
-            "Could not open file ", fullFilename, "Exception:", e)
+        logger.warning(f"Could not open file {fullFilename}")
         raise e
     return data
 
 
-def transformDate2String(dateToTransform: datetime) -> str:
+def test_writeDictToFile():
+    data = {
+        "hello": "world",
+        "now": "what"
+    }
+    writeDictToFile(dictionary=data, fullFilename="test.json")
+
+
+def test_readDictFromFile():
+    data = {
+        "hello": "world",
+        "now": "what"
+    }
+    FILENAME = "test.json"
+
+    # Write and then read it
+    writeDictToFile(dictionary=data, fullFilename=FILENAME)
+    data2 = readDictFromFile(fullFilename=FILENAME)
+
+    # Delete test data, try to read it - even though it doesn't exist
     try:
-        dateStr = dateToTransform.strftime(internalDateFormat)
+        os.remove(FILENAME)
+    except FileNotFoundError:
+        pass
+    try:
+        data3 = readDictFromFile(fullFilename=FILENAME)
     except:
-        log("transformDate2String", "Error transforming date: ",
-            dateToTransform, "Continuing with empty date string.")
+        print("All good, I am in an exception as I expected it to be")
+
+
+test_readDictFromFile()
+
+
+def transformDate2String(dateToTransform: datetime) -> str:
+    logger = get_logger(transformDate2String.__name__)
+    try:
+        dateStr = dateToTransform.strftime(INTERNAL_DATE_FORMAT)
+    except:
+        logger.error(
+            f"Error transforming date: {dateToTransform}. Continuing with empty date string.")
         dateStr = ""
     return dateStr
 
