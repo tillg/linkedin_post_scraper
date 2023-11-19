@@ -7,6 +7,9 @@ from typing import Dict,  Optional
 from PIL import Image
 from requests import Response, Session
 from sys import exit
+import logging
+
+INTERNAL_DATE_FORMAT = "%Y-%m-%d"
 
 
 class color:
@@ -44,6 +47,41 @@ def get_logger(name, log_level=logging.WARN):
         logger.addHandler(handler)
 
     return logger
+
+
+def transformDate2String(dateToTransform: datetime) -> str:
+    logger = get_logger(transformDate2String.__name__)
+    try:
+        dateStr = dateToTransform.strftime(INTERNAL_DATE_FORMAT)
+    except:
+        logger.error(
+            f"Error transforming date: {dateToTransform}. Continuing with empty date string.")
+        dateStr = ""
+    return dateStr
+
+
+def transformString2Date(stringToTransform: str) -> Optional[datetime]:
+    """Transforms a String that holds a date in my standard format to a Date. 
+        In case it can't transform it, it return None."""
+    try:
+        dateObj = datetime.strptime(stringToTransform, internalDateFormat)
+    except:
+        log("transformString2Date", "Error transforming string to date: ",
+            stringToTransform)
+        dateObj = None
+    return dateObj
+
+
+def getNowAsString() -> str:
+    return transformDate2String(datetime.now())
+
+
+def getMinDateAsString() -> str:
+    return transformDate2String(datetime(1970, 1, 1))
+
+
+def stripBlanks(str):
+    return str.strip(" \t")
 
 
 def areVariablesSet(varNames) -> bool:
@@ -147,41 +185,6 @@ def test_readDictFromFile():
 
 
 test_readDictFromFile()
-
-
-def transformDate2String(dateToTransform: datetime) -> str:
-    logger = get_logger(transformDate2String.__name__)
-    try:
-        dateStr = dateToTransform.strftime(INTERNAL_DATE_FORMAT)
-    except:
-        logger.error(
-            f"Error transforming date: {dateToTransform}. Continuing with empty date string.")
-        dateStr = ""
-    return dateStr
-
-
-def transformString2Date(stringToTransform: str) -> Optional[datetime]:
-    """Transforms a String that holds a date in my standard format to a Date. 
-        In case it can't transform it, it return None."""
-    try:
-        dateObj = datetime.strptime(stringToTransform, internalDateFormat)
-    except:
-        log("transformString2Date", "Error transforming string to date: ",
-            stringToTransform)
-        dateObj = None
-    return dateObj
-
-
-def getNowAsString() -> str:
-    return transformDate2String(datetime.now())
-
-
-def getMinDateAsString() -> str:
-    return transformDate2String(datetime(1970, 1, 1))
-
-
-def stripBlanks(str):
-    return str.strip(" \t")
 
 
 def dateStringDistanceInDays(dateStr1: str, dateStr2: str) -> int:

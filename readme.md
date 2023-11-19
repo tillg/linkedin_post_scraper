@@ -15,6 +15,12 @@ In the terminal launch the scraper with `./linkedin_post_scraper.py`.
 
 ## Problems / Solutions / Readings
 
+### Testing in Python
+
+I followed [this guide](https://realpython.com/python-testing/) and chose to use `pytest` - therefore going thru [this guide](https://realpython.com/pytest-python-testing/) too 😜.
+
+To run all my tests simply call `pytest`.
+
 ### Working on a remote host
 
 Following the explanation [Develop on a remote Docker host](https://code.visualstudio.com/remote/advancedcontainers/develop-remote-host) I tried the way called [Connect using the Docker CLI](https://code.visualstudio.com/remote/advancedcontainers/develop-remote-host#_connect-using-the-docker-cli):

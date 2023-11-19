@@ -22,12 +22,13 @@
     "customizations": {
         "vscode": {
             "extensions": [
-                "yzhang.markdown-all-in-one",
                 "ms-python.python",
+                "yzhang.markdown-all-in-one",
                 "ms-toolsai.jupyter-keymap",
                 "ms-python.autopep8",
                 "ms-azuretools.vscode-docker",
-                "mohd-akram.vscode-html-format"
+                "mohd-akram.vscode-html-format",
+                "ms-python.vscode-pylance"
             ]
         }
     }
