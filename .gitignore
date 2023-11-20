@@ -3,6 +3,7 @@ credentials.txt
 set_secrets.sh
 .bash_history
 screen_after*.png
+**/data/**
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

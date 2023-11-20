@@ -30,7 +30,7 @@ logger = get_logger("linkedin_post_scraper.__main__", logging.INFO)
 # Define global constants
 PAGE = 'https://www.linkedin.com/company/mgm-technology-partners-gmbh'
 SCROLL_PAUSE_TIME = 1.5
-DATA_DIRECTORY = os.getenv('DATA_DIRECTORY') or 'data'
+DATA_DIRECTORY = os.getenv('DATA_DIRECTORY') or '../data'
 os.makedirs(DATA_DIRECTORY, exist_ok=True)
 
 TMP_DIRECTORY = os.getenv('TMP_DIRECTORY') or f"{DATA_DIRECTORY}/tmp_linkedin"
@@ -45,7 +45,7 @@ SELENIUM_RUNNER = 'http://selenium:4444'
 # GLOBAL_BROWSER = None  # We need to declare this global variable, will set it later
 
 CREDENTIALS_FILE = "../credentials.txt"
-MAX_PAGES = 4
+MAX_PAGES = 2
 
 # Read credentials
 logger.info("Gathering credentials")
@@ -373,7 +373,7 @@ def get_blog_containers(browser=None, force_retrieval=False, max_pages=MAX_PAGES
         blog_containers = extract_blogs_from_container_elements(
             browser, container_elements)
         write_blog_containers_to_file(blog_containers)
-        return blog_containers
+    return blog_containers
 
 
 def extract_date_string_from_soup(soup: bs):

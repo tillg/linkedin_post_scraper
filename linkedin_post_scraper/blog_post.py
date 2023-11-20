@@ -5,7 +5,7 @@ from utils import transformDate2String, get_logger, simplify_text
 from typing import Any, Dict, Optional
 
 # Setting my variables
-DATA_DIRECTORY = os.getenv('DATA_DIRECTORY') or 'data'
+DATA_DIRECTORY = os.getenv('DATA_DIRECTORY') or '../data'
 BLOGS_DIRECTORY = os.getenv('BLOGS_DIRECTORY') or f"{DATA_DIRECTORY}/blogs"
 os.makedirs(BLOGS_DIRECTORY, exist_ok=True)
 
