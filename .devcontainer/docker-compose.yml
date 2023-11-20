@@ -13,8 +13,7 @@ services:
     restart: unless-stopped
     volumes:
       - ..:/workspace:cached
-      - ../data/blogs:/site/_posts
-      - ../data/site:/site/_site
+      - data:../data
       - linkedin_post_scraper_bashhistory:/commandhistory
     command: /bin/sh -c "while sleep 1000; do :; done"
 
