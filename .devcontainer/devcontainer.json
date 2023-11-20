@@ -22,14 +22,16 @@
     "customizations": {
         "vscode": {
             "extensions": [
-                "ms-python.python",
-                "yzhang.markdown-all-in-one",
-                "ms-toolsai.jupyter-keymap",
-                "ms-python.autopep8",
-                "ms-azuretools.vscode-docker",
-                "mohd-akram.vscode-html-format",
-                "ms-python.vscode-pylance"
-            ]
+				"ms-python.python",
+				"yzhang.markdown-all-in-one",
+				"ms-toolsai.jupyter-keymap",
+				"ms-python.autopep8",
+				"ms-azuretools.vscode-docker",
+				"mohd-akram.vscode-html-format",
+				"ms-python.vscode-pylance",
+				"GitHub.copilot",
+				"GitHub.copilot-chat"
+			]
         }
     }
 }

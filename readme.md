@@ -4,9 +4,17 @@ Scraping posts of a company from linkedin and saving them in markdown files.
 
 ## Starting the environment
 
-In order to start the environment, open `VScode` and start it in the container. Usually VScode notices that there is a `.devcontainer` 
+In order to start the environment, open `VScode` and start it in the container. Usually VScode notices that there is a `.devcontainer` and suggests to start the environment in the container.
+
+Once the devcontainers are up & running you can inspect what's going on in the selenium container via [this UI](http://localhost:4444/ui#).
 
 In the terminal launch the scraper with `./linkedin_post_scraper.py`.
+
+## Concepts & structures
+
+* **browser** and **GLOBAL_BROWSER** are variables that hold the selenium browser instance. The GLOBAL_BROWSER is used to keep the browser open after the script has finished, since it might be re-used later. Often this object is called `driver` in other code bases.
+* **Containers** are the HTML code that contains the data of one post. From the container I extract text using the *Beautifoul Soup* framework.
+* **Blog posts** is what I create. They contain a date, a text, an aiuthor. Since LinkedIn Posts do not have a title, I need to create one myself. I do this by taking the first 10 words of the post and use them as a title. At a later stage generating such titles could be a great AI use case.
 
 ## Todos
 

@@ -2,7 +2,6 @@
 # coding: utf-8
 
 from selenium import webdriver
-import unidecode
 import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -22,16 +21,17 @@ import tkinter as tk
 import json
 import hashlib
 
-from utils import get_logger, transformDate2String, transformString2Date, getNowAsString, getMinDateAsString, stripBlanks, writeDictToFile, readDictFromFile
+from utils import get_logger, getNowAsString, writeDictToFile, readDictFromFile
+from blog_post import save_blog_posts_to_file
+from linkedin_utils import linkedin_rel_date2datetime
+
+logger = get_logger(__name__, logging.INFO)
 
 # Define global constants
 PAGE = 'https://www.linkedin.com/company/mgm-technology-partners-gmbh'
 SCROLL_PAUSE_TIME = 1.5
 DATA_DIRECTORY = os.getenv('DATA_DIRECTORY') or 'data'
 os.makedirs(DATA_DIRECTORY, exist_ok=True)
-
-BLOGS_DIRECTORY = os.getenv('BLOGS_DIRECTORY') or f"{DATA_DIRECTORY}/blogs"
-os.makedirs(BLOGS_DIRECTORY, exist_ok=True)
 
 TMP_DIRECTORY = os.getenv('TMP_DIRECTORY') or f"{DATA_DIRECTORY}/tmp_linkedin"
 os.makedirs(TMP_DIRECTORY, exist_ok=True)
@@ -42,25 +42,30 @@ NO_DATE = "__no_date__"
 FILENAME_RAW_POSTS = f"{TMP_DIRECTORY}/raw_posts.json"
 
 SELENIUM_RUNNER = 'http://selenium:4444'
-GLOBAL_BROWSER = None  # We need to declare this global variable, will set it later
+# GLOBAL_BROWSER = None  # We need to declare this global variable, will set it later
+
+CREDENTIALS_FILE = "../credentials.txt"
 
 # Read credentials
+logger.info("Gathering credentials")
 try:
-    f = open("credentials.txt", "r")
+    f = open(CREDENTIALS_FILE, "r")
     contents = f.read()
     username = contents.replace("=", ",").split(",")[1]
     password = contents.replace("=", ",").split(",")[3]
 except:
-    f = open("credentials.txt", "w+")
+    f = open(CREDENTIALS_FILE, "w+")
     username = input('Enter your linkedin username: ')
     password = input('Enter your linkedin password: ')
     f.write("username={}, password={}".format(username, password))
     f.close()
 
-# ## Login to LinkedIn
-
 
 def create_loggedin_browser():
+    """
+    Creatinmg a new browser session and logging in to LinkedIn
+    """
+
     logger = get_logger(create_loggedin_browser.__name__, logging.INFO)
 
     # access Webriver
@@ -69,7 +74,8 @@ def create_loggedin_browser():
 
     logger.info('Requesting remote browser/driver...')
     browser = webdriver.Remote(SELENIUM_RUNNER, options=chrome_options)
-    logger.info('Received remote browser/driver 😜')
+    logger.info(
+        f"Received remote browser/driver 😜 See what's goinmg on here: http://localhost:4444/ui#/sessions"
 
     # Open login page
     browser.get(
@@ -90,7 +96,7 @@ def create_loggedin_browser():
     if 'quick verification' in browser.page_source:
         logger.warning(f"I think I got a special verification page!")
         now = datetime.now()
-        filename = "screen_after_login_" + \
+        filename = f"{TMP_DIRECTORY}/screen_after_login_" + \
             now.strftime('%Y-%m-%d_%H-%M-%S.png')
         browser.save_screenshot(filename)
         logger.info(
@@ -105,31 +111,16 @@ def create_loggedin_browser():
     return browser
 
 
-# Note: To see the running browser/driver sessions on the selenium runner service, go [here](http://localhost:4444/ui#/sessions)
+def browser_go_to_company_page(browser=None, max_pages=0):
+    """
+    Goes to the company page and scrolls to the bottom of the page
+    """
+    # TODO: Pass in the company page as argument
 
-def login_global_browser():
-    logger = get_logger(login_global_browser.__name__, logging.INFO)
-    # We need to explicitly declare that we mean the gllobal var here...
-    global GLOBAL_BROWSER
+    logger = get_logger(browser_go_to_company_page.__name__, logging.INFO)
+    if browser is None:
+        browser = create_loggedin_browser()
 
-    if GLOBAL_BROWSER is not None:
-        logger.info('Quitting existing browser/driver session')
-        try:
-            GLOBAL_BROWSER.quit()
-        except:
-            logger.warn(
-                'Failed quitting existing browser/driver. Ignoring, trying to create a new one anyways.')
-    GLOBAL_BROWSER = create_loggedin_browser()
-
-
-login_global_browser()
-
-
-# ## Load posts page & scroll to bottom
-
-def browser_go_to_page(browser, max_pages=0):
-    logger = get_logger(browser_go_to_page.__name__, logging.INFO)
-    # Go to webpage
     company_posts_page = PAGE + '/posts/'
     logger.info(f"{company_posts_page=}")
     browser.get(company_posts_page)
@@ -159,29 +150,18 @@ def browser_go_to_page(browser, max_pages=0):
         if max_pages > 0:
             if scroll_page == max_pages:
                 break
-
     return
 
 
-def get_page_source(browser, max_pages=0):
-    logger = get_logger(get_page_source.__name__, logging.INFO)
-    browser_go_to_page(browser, max_pages)
-
-    company_page = browser.page_source
-    return company_page
-
-
-def get_linkedin_browser(browser, max_pages=0):
-    browser_go_to_page(browser, max_pages=max_pages)
-    return browser
-
-
-# ## Retrieve data from loaded page
-
-def retrieve_container_elements(browser, max_pages):
+def retrieve_container_elements(browser=None, max_pages=0):
+    """
+    Retrieve the container elements from the page
+    """
     logger = get_logger(retrieve_container_elements.__name__, logging.INFO)
-    linkedin_browser = get_linkedin_browser(browser, max_pages=max_pages)
-    container_elements = linkedin_browser.find_elements(
+    if browser is None:
+        browser = create_loggedin_browser()
+    browser_go_to_company_page(browser, max_pages=max_pages)
+    container_elements = browser.find_elements(
         By.CLASS_NAME, "occludable-update")
     logger.info(
         f"No of container elements before filter: {len(container_elements)}")
@@ -189,7 +169,7 @@ def retrieve_container_elements(browser, max_pages):
         element.find_elements(By.CLASS_NAME, "update-components-actor")) > 0]
     logger.info(
         f"No of container elements after filter: {len(container_elements)}")
-    return container_elements, linkedin_browser
+    return container_elements, browser
 
 
 def is_element_in_viewport(driver, element):
@@ -206,6 +186,11 @@ def is_element_in_viewport(driver, element):
 
 
 def get_post_url(browser):
+    """
+    The URL of a linkedIn post is not directly accessible. It needs to 
+    be created via an extra server round trip.
+    This function clicks on the button that creates the URL and then retrieves it.
+    """
     logger = get_logger(get_post_url.__name__, logging.WARN)
     elements = browser.find_elements(
         By.XPATH, "//*[text()='Copy link to post']")
@@ -259,7 +244,7 @@ def write_blog_containers_to_file(blogs):
     logger = get_logger(write_blog_containers_to_file.__name__, logging.INFO)
     # Prepare blogs to be saveable i.e. serializable
     blogs_to_save = {}
-    for blog_id, blog in blogs:
+    for blog_id, blog in blogs.items():
         blog_to_save = blog
         blog_to_save["soup"] = blog["soup"].prettify()
         blogs_to_save[blog_id] = blog_to_save
@@ -353,13 +338,15 @@ def extract_blogs_from_container_elements(browser, container_elements):
     return blogs
 
 
-def get_blog_containers(force_retrieval=False, max_pages=0):
+def get_blog_containers(browser=None, force_retrieval=False, max_pages=0):
     logger = get_logger(get_blog_containers.__name__, logging.INFO)
     if force_retrieval:
         logger.info(
             f"Retrieving blog containers: {force_retrieval=} {max_pages=}")
+        if browser is None:
+            browser = create_loggedin_browser()
         container_elements, browser = retrieve_container_elements(
-            GLOBAL_BROWSER, max_pages)
+            browser, max_pages)
         blog_containers = extract_blogs_from_container_elements(
             browser, container_elements)
         return blog_containers
@@ -370,14 +357,10 @@ def get_blog_containers(force_retrieval=False, max_pages=0):
         logger.warning(
             f"Could not read blog containers from file, retrieving from website")
         container_elements, browser = retrieve_container_elements(
-            GLOBAL_BROWSER, max_pages)
+            browser, max_pages)
         blog_containers = extract_blogs_from_container_elements(
             browser, container_elements)
         return blog_containers
-
-
-login_global_browser()
-blog_container = get_blog_containers(force_retrieval=False, max_pages=3)
 
 
 def extract_date_string_from_soup(soup: bs):
@@ -403,51 +386,6 @@ def test_extract_date_string_from_soup():
     containers = get_blog_containers()
     human_readable_date = extract_date_string_from_soup(containers[0]["soup"])
     print(human_readable_date)
-
-
-test_extract_date_string_from_soup()
-
-
-def linkedin_rel_date2datetime(relative_date):
-    """Transforms a relative date from LinkedIn to a datetime object.
-    Transform "6d •" to a proper datetime"""
-
-    logger = get_logger(linkedin_rel_date2datetime.__name__,
-                        log_level=logging.WARN)
-
-    p = re.compile('\d{1,2}')
-    m = p.search(relative_date)
-    if m is None:
-        logger.error(f"Amount not found in {relative_date}")
-        exit
-    amount = float(m.group())
-    p = re.compile('(h|d|w|mo|yr)')
-    m = p.search(relative_date)
-    logger.info(f"m: {m}, type(m): {type(m)}")
-    if m is None:
-        logger.error(f"Unit not found in {relative_date}")
-        exit
-    unit = m.group()
-    if unit == 'yr':
-        amount *= 365*24
-    elif unit == 'mo':
-        amount *= 30*24
-    elif unit == 'w':
-        amount *= 7*24
-    elif unit == 'd':
-        amount *= 24
-    logger.info(f" {relative_date} --> Amount in hours: {amount}")
-    # Calculate the date from today's, and return it
-    howRecent = timedelta(hours=amount)
-    todaysDate = datetime.now()
-    date = (todaysDate - howRecent)
-    return date
-
-
-# Some tests
-rel_dates = ['2h •', '3d •', '1w •']
-for rel_date in rel_dates:
-    print(f"{rel_date} --> {linkedin_rel_date2datetime(rel_date)}")
 
 
 def simplify_content(content):
@@ -491,7 +429,7 @@ blog_posts = extract_all_from_containers()
 
 
 if (len(blog_posts) != len(get_blog_containers())):
-    print(
+    logger.info(
         "Not all containers could be transformed to blog_posts! No of conatiner: {len(containers)}, no of blog posts: {len(blog_posts)}")
 
 
@@ -501,91 +439,6 @@ print(blog_posts[blog_post_index])
 
 
 # ## Saving blog posts to files
-
-
-def simplify_text(some_text: str) -> str:
-    simplified_text = some_text.replace('"', "'")
-    simplified_text = unidecode.unidecode(simplified_text)
-    simplified_text = re.sub("[^A-Za-z\-_]+", "_", simplified_text)
-    simplified_text = re.sub('_+', '_', simplified_text)
-    return simplified_text
-
-
-def build_title(blog_post):
-    LEN_OF_TITLE = 35
-    title = blog_post["text"][:LEN_OF_TITLE].replace('\n', ' ')
-    return title
-
-
-def build_title(blog_post):
-    LEN_OF_TITLE = 35
-    text = blog_post["text"]
-    title = text[:LEN_OF_TITLE]
-
-    if len(text) > LEN_OF_TITLE and text[LEN_OF_TITLE] != ' ':
-        # Extend to the end of the current word
-        while len(text) > len(title) and text[len(title)] != ' ':
-            title += text[len(title)]
-
-    # Replace newlines with spaces in the final title
-    title = title.replace('\n', ' ')
-    return title
-
-
-def build_simplified_title(blog_post: Dict) -> str:
-    simplified_title = simplify_text(build_title(blog_post))
-    return simplified_title
-
-
-def build_filename(blog_post: Dict) -> str:
-    logger = get_logger(build_filename.__name__, logging.INFO)
-    LEN_OF_FILENAME = 45
-    posted_date = blog_post["posted_date"]
-    try:
-        posted_date_for_filename = posted_date.strftime(INTERNAL_DATE_FORMAT)
-    except:
-        createdDateStrForFilename = "_no_date_"
-    simplified_title = build_simplified_title(blog_post)[:LEN_OF_FILENAME-13]
-    filename = f"{BLOGS_DIRECTORY}/{posted_date_for_filename}-{simplified_title}.md"
-    logger.info(filename)
-    return filename
-
-
-for blog_post in blog_posts:
-    print(build_filename(blog_post))
-
-
-def build_frontmatter(blog_post):
-    posted_date = blog_post["posted_date"]
-    title = build_title(blog_post)
-    original_url = blog_post["original_url"]
-    frontMatter = ("---\n"
-                   "layout: post\n"
-                   "date: " + transformDate2String(posted_date) + "\n"
-                   'title: "' + title + '"\n'
-                   "originalUrl: \"" + original_url + "\"\n")
-    # "tags: linkedin " + linkedin_user_based_tags + "\n" +
-    # "author: \"" + author + "\"\n")
-    frontMatter += "---\n\n"
-    return frontMatter
-
-
-def save_blog_post_to_file(blog_post: Dict) -> None:
-    content = blog_post["text"]
-    filename = build_filename(blog_post)
-    frontmatter = build_frontmatter(blog_post)
-    path = os.path.dirname(filename)
-    # log("saveToFile", "Saving to file ", filename)
-    os.makedirs(path, exist_ok=True)
-    with open(filename, 'w') as file:
-        file.write(frontmatter)
-        file.write(content)
-        file.close()
-
-
-def save_blog_posts_to_file(blog_posts):
-    for blog_post in blog_posts:
-        save_blog_post_to_file(blog_post)
 
 
 save_blog_posts_to_file(blog_posts)

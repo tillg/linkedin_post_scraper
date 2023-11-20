@@ -1,6 +1,9 @@
 import json
 import os
 import pathlib
+import unidecode
+import re as re
+
 from datetime import datetime, timedelta
 from typing import Dict,  Optional
 
@@ -263,3 +266,14 @@ def log(name: str,  *args, end: str = "\n"):
     for arg in args:
         strToPrint += str(arg)
     print(strToPrint, end=end)
+
+
+def simplify_text(some_text: str) -> str:
+    """
+    Simplifies a text to be used as a filename
+    """
+    simplified_text = some_text.replace('"', "'")
+    simplified_text = unidecode.unidecode(simplified_text)
+    simplified_text = re.sub("[^A-Za-z\-_]+", "_", simplified_text)
+    simplified_text = re.sub('_+', '_', simplified_text)
+    return simplified_text
