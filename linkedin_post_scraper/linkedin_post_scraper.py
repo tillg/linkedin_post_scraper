@@ -25,7 +25,7 @@ from utils import get_logger, getNowAsString, writeDictToFile, readDictFromFile
 from blog_post import save_blog_posts_to_file
 from linkedin_utils import linkedin_rel_date2datetime
 
-logger = get_logger(__name__, logging.INFO)
+logger = get_logger("linkedin_post_scraper.__main__", logging.INFO)
 
 # Define global constants
 PAGE = 'https://www.linkedin.com/company/mgm-technology-partners-gmbh'
@@ -45,6 +45,7 @@ SELENIUM_RUNNER = 'http://selenium:4444'
 # GLOBAL_BROWSER = None  # We need to declare this global variable, will set it later
 
 CREDENTIALS_FILE = "../credentials.txt"
+MAX_PAGES = 4
 
 # Read credentials
 logger.info("Gathering credentials")
@@ -75,7 +76,7 @@ def create_loggedin_browser():
     logger.info('Requesting remote browser/driver...')
     browser = webdriver.Remote(SELENIUM_RUNNER, options=chrome_options)
     logger.info(
-        f"Received remote browser/driver 😜 See what's goinmg on here: http://localhost:4444/ui#/sessions"
+        f"Received remote browser/driver 😜 See what's goinmg on here: http://localhost:4444/ui#/sessions")
 
     # Open login page
     browser.get(
@@ -111,7 +112,7 @@ def create_loggedin_browser():
     return browser
 
 
-def browser_go_to_company_page(browser=None, max_pages=0):
+def browser_go_to_company_page(browser=None, max_pages=MAX_PAGES):
     """
     Goes to the company page and scrolls to the bottom of the page
     """
@@ -153,7 +154,7 @@ def browser_go_to_company_page(browser=None, max_pages=0):
     return
 
 
-def retrieve_container_elements(browser=None, max_pages=0):
+def retrieve_container_elements(browser=None, max_pages=MAX_PAGES):
     """
     Retrieve the container elements from the page
     """
@@ -205,7 +206,7 @@ def get_post_url(browser):
         logger.info(f"URL of blog post: {blog_post_url}")
         return blog_post_url
     except Exception as e:
-        logger.warn(
+        logger.warning(
             f"Could not extract blog post url, retrurning None. Error: {e}")
         return None
 
@@ -243,6 +244,7 @@ def extract_blog_post_url_from_container_element(browser, container_element):
 def write_blog_containers_to_file(blogs):
     logger = get_logger(write_blog_containers_to_file.__name__, logging.INFO)
     # Prepare blogs to be saveable i.e. serializable
+    logger.ingfo(f"Preparing {len(blogs)} blog containers to be saved")
     blogs_to_save = {}
     for blog_id, blog in blogs.items():
         blog_to_save = blog
@@ -251,6 +253,7 @@ def write_blog_containers_to_file(blogs):
     try:
         writeDictToFile(dictionary=blogs_to_save,
                         fullFilename=FILENAME_RAW_POSTS)
+        logger.info(f"Blog containers written to {FILENAME_RAW_POSTS}")
     except Exception as e:
         logger.warn(
             f"could not write {len(blogs)} blog containers to file {FILENAME_RAW_POSTS}: {e}")
@@ -259,19 +262,27 @@ def write_blog_containers_to_file(blogs):
 
 def read_blog_containers_from_file():
     logger = get_logger(read_blog_containers_from_file.__name__, logging.INFO)
-    blogs = {}
+    containers = {}
     try:
-        blogs = readDictFromFile(fullFilename=FILENAME_RAW_POSTS)
+        containers = readDictFromFile(fullFilename=FILENAME_RAW_POSTS)
     except Exception as e:
         logger.warning(
             f"Could not read blog containers from file {FILENAME_RAW_POSTS}. Raising Error.")
         raise e
-    for blog_id, blog in blogs:
+    # Delete the _stats entry
+    containers.pop("_stats", None)
+    for container_id, container in containers.items():
         # convert string to BeautifulSoup object
-        blog[blog_id]["soup"] = bs(blog["soup"], "html.parser")
+        try:
+            containers[container_id]["soup"] = bs(
+                container["soup"], "html.parser")
+        except Exception as e:
+            logger.error(
+                f"Copuld not transform htmnl to beautifoulds soup object. Error {e} ")
+            container[container_id]["soup"] = None
     logger.info(
-        f"Read {len(blogs)} blog containersc from file {FILENAME_RAW_POSTS}.")
-    return blogs
+        f"Read {len(containers)} blog containersc from file {FILENAME_RAW_POSTS}.")
+    return containers
 
 
 def extract_text_from_soup(soup: bs):
@@ -318,7 +329,8 @@ def extract_blogs_from_container_elements(browser, container_elements):
         blog_url = extract_blog_post_url_from_container_element(
             browser, container_element)
         blog_source = container_element.get_attribute('outerHTML')
-        blog_soup = bs(blog_source.encode("utf-8"), "html")
+        blog_soup = bs(blog_source.encode("utf-8"),
+                       "html.parser")
         blog_text = extract_text_from_soup(blog_soup)
         if (len(blog_text) == 0):
             logger.warning(
@@ -338,7 +350,7 @@ def extract_blogs_from_container_elements(browser, container_elements):
     return blogs
 
 
-def get_blog_containers(browser=None, force_retrieval=False, max_pages=0):
+def get_blog_containers(browser=None, force_retrieval=False, max_pages=MAX_PAGES):
     logger = get_logger(get_blog_containers.__name__, logging.INFO)
     if force_retrieval:
         logger.info(
@@ -360,6 +372,7 @@ def get_blog_containers(browser=None, force_retrieval=False, max_pages=0):
             browser, max_pages)
         blog_containers = extract_blogs_from_container_elements(
             browser, container_elements)
+        write_blog_containers_to_file(blog_containers)
         return blog_containers
 
 
@@ -414,13 +427,13 @@ def extract_all_from_containers():
     containers = get_blog_containers()
     blog_posts = []
 
-    for container_no, container in enumerate(containers):
+    for container_id, container in containers.items():
         try:
-            logger.info(f"Processing container # {container_no}")
+            logger.info(f"Processing container id {container_id}")
             blog_post = extract_all_from_container(container)
             blog_posts.append(blog_post)
         except Exception as e:
-            logger.warning(f"Container # {container_no} not added: {str(e)}")
+            logger.warning(f"Container id {container_id} not added: {str(e)}")
             pass
     return blog_posts
 

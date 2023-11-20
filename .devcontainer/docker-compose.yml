@@ -22,7 +22,7 @@ services:
       dockerfile: Dockerfile-selenium
     container_name: selenium
     environment:
-      sessionTimeout: "10"
+      sessionTimeout: 10
     shm_size: 2gb
     networks:
       - linkedin_scraper

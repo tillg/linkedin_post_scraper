@@ -187,7 +187,7 @@ def test_readDictFromFile():
         print("All good, I am in an exception as I expected it to be")
 
 
-test_readDictFromFile()
+# test_readDictFromFile()
 
 
 def dateStringDistanceInDays(dateStr1: str, dateStr2: str) -> int:
