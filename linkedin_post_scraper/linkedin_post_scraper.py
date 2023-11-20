@@ -244,7 +244,7 @@ def extract_blog_post_url_from_container_element(browser, container_element):
 def write_blog_containers_to_file(blogs):
     logger = get_logger(write_blog_containers_to_file.__name__, logging.INFO)
     # Prepare blogs to be saveable i.e. serializable
-    logger.ingfo(f"Preparing {len(blogs)} blog containers to be saved")
+    logger.info(f"Preparing {len(blogs)} blog containers to be saved")
     blogs_to_save = {}
     for blog_id, blog in blogs.items():
         blog_to_save = blog
