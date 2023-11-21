@@ -18,7 +18,6 @@ import os
 import types
 import logging
 import tkinter as tk
-import json
 import hashlib
 
 from utils import get_logger, getNowAsString, writeDictToFile, readDictFromFile
@@ -45,7 +44,6 @@ SELENIUM_RUNNER = 'http://selenium:4444'
 # GLOBAL_BROWSER = None  # We need to declare this global variable, will set it later
 
 CREDENTIALS_FILE = "../credentials.txt"
-MAX_PAGES = 2
 
 # Read credentials
 logger.info("Gathering credentials")
@@ -112,13 +110,16 @@ def create_loggedin_browser():
     return browser
 
 
-def browser_go_to_company_page(browser=None, max_pages=MAX_PAGES):
+def browser_go_to_company_page(browser=None, options=None):
     """
     Goes to the company page and scrolls to the bottom of the page
     """
     # TODO: Pass in the company page as argument
 
     logger = get_logger(browser_go_to_company_page.__name__, logging.INFO)
+    max_pages = 0
+    if (options is not None) and ("max_pages" in options):
+        max_pages = options["max_pages"]
     if browser is None:
         browser = create_loggedin_browser()
 
@@ -154,14 +155,14 @@ def browser_go_to_company_page(browser=None, max_pages=MAX_PAGES):
     return
 
 
-def retrieve_container_elements(browser=None, max_pages=MAX_PAGES):
+def retrieve_container_elements(browser=None, options=None):
     """
     Retrieve the container elements from the page
     """
     logger = get_logger(retrieve_container_elements.__name__, logging.INFO)
     if browser is None:
         browser = create_loggedin_browser()
-    browser_go_to_company_page(browser, max_pages=max_pages)
+    browser_go_to_company_page(browser, options=options)
     container_elements = browser.find_elements(
         By.CLASS_NAME, "occludable-update")
     logger.info(
@@ -192,7 +193,7 @@ def get_post_url(browser):
     be created via an extra server round trip.
     This function clicks on the button that creates the URL and then retrieves it.
     """
-    logger = get_logger(get_post_url.__name__, logging.WARN)
+    logger = get_logger(get_post_url.__name__, logging.INFO)
     elements = browser.find_elements(
         By.XPATH, "//*[text()='Copy link to post']")
     if len(elements) != 1:
@@ -350,15 +351,19 @@ def extract_blogs_from_container_elements(browser, container_elements):
     return blogs
 
 
-def get_blog_containers(browser=None, force_retrieval=False, max_pages=MAX_PAGES):
+def get_blog_containers(browser=None, options=None):
+    force_retrieval = False
+    if (options is not None) and ("force_retrieval" in options):
+        force_retrieval = options["force_retrieval"]
+
     logger = get_logger(get_blog_containers.__name__, logging.INFO)
     if force_retrieval:
         logger.info(
-            f"Retrieving blog containers: {force_retrieval=} {max_pages=}")
+            f"Retrieving blog containers: {force_retrieval=}")
         if browser is None:
             browser = create_loggedin_browser()
         container_elements, browser = retrieve_container_elements(
-            browser, max_pages)
+            browser, options=options)
         blog_containers = extract_blogs_from_container_elements(
             browser, container_elements)
         return blog_containers
@@ -369,7 +374,7 @@ def get_blog_containers(browser=None, force_retrieval=False, max_pages=MAX_PAGES
         logger.warning(
             f"Could not read blog containers from file, retrieving from website")
         container_elements, browser = retrieve_container_elements(
-            browser, max_pages)
+            browser, options=options)
         blog_containers = extract_blogs_from_container_elements(
             browser, container_elements)
         write_blog_containers_to_file(blog_containers)
@@ -422,9 +427,9 @@ def extract_all_from_container(container):
     return blog_post
 
 
-def extract_all_from_containers():
+def extract_all_from_containers(options=None):
     logger = get_logger(extract_all_from_containers.__name__, logging.INFO)
-    containers = get_blog_containers()
+    containers = get_blog_containers(options=options)
     blog_posts = []
 
     for container_id, container in containers.items():
@@ -438,16 +443,20 @@ def extract_all_from_containers():
     return blog_posts
 
 
-blog_posts = extract_all_from_containers()
+options = {
+    "force_retrieval": True,
+    "max_pages": 2
+}
+blog_posts = extract_all_from_containers(options=options)
 
 
-if (len(blog_posts) != len(get_blog_containers())):
-    logger.info(
-        "Not all containers could be transformed to blog_posts! No of conatiner: {len(containers)}, no of blog posts: {len(blog_posts)}")
+# if (len(blog_posts) != len(get_blog_containers())):
+#     logger.info(
+#         "Not all containers could be transformed to blog_posts! No of conatiner: {len(containers)}, no of blog posts: {len(blog_posts)}")
 
 
-blog_post_index = 1
-print(blog_posts[blog_post_index])
+# blog_post_index = 1
+# print(blog_posts[blog_post_index])
 # blog_posts
 
 
