@@ -41,7 +41,6 @@ NO_DATE = "__no_date__"
 FILENAME_RAW_POSTS = f"{TMP_DIRECTORY}/raw_posts.json"
 
 SELENIUM_RUNNER = 'http://selenium:4444'
-# GLOBAL_BROWSER = None  # We need to declare this global variable, will set it later
 
 CREDENTIALS_FILE = "../credentials.txt"
 
@@ -62,7 +61,7 @@ except:
 
 def create_loggedin_browser():
     """
-    Creatinmg a new browser session and logging in to LinkedIn
+    Creating a new browser session and logging in to LinkedIn
     """
 
     logger = get_logger(create_loggedin_browser.__name__, logging.INFO)
@@ -74,7 +73,7 @@ def create_loggedin_browser():
     logger.info('Requesting remote browser/driver...')
     browser = webdriver.Remote(SELENIUM_RUNNER, options=chrome_options)
     logger.info(
-        f"Received remote browser/driver 😜 See what's goinmg on here: http://localhost:4444/ui#/sessions")
+        f"Received remote browser/driver 😜 See what's going on here: http://localhost:4444/ui#/sessions")
 
     # Open login page
     browser.get(
@@ -110,7 +109,7 @@ def create_loggedin_browser():
     return browser
 
 
-def browser_go_to_company_page(browser=None, options=None):
+def browser_go_to_company_page(browser, options=None):
     """
     Goes to the company page and scrolls to the bottom of the page
     """
@@ -120,8 +119,6 @@ def browser_go_to_company_page(browser=None, options=None):
     max_pages = 0
     if (options is not None) and ("max_pages" in options):
         max_pages = options["max_pages"]
-    if browser is None:
-        browser = create_loggedin_browser()
 
     company_posts_page = PAGE + '/posts/'
     logger.info(f"{company_posts_page=}")
@@ -187,6 +184,55 @@ def is_element_in_viewport(driver, element):
     """, element)
 
 
+def get_clipboard_content(browser):
+    java_script_code = """
+            function whatever() {
+                return document.title;
+            }
+            whatever();
+        """
+    java_script_code = """
+        async function whatever() {
+            return document.title;
+        }
+        var callback = arguments[arguments.length - 1]; 
+        window.setTimeout(function(){ whatever() }, 3000);
+    """
+    java_script_code = """
+        async function getCBContents() {
+            try {
+                cbContent = await navigator.clipboard.readText();
+                console.log("Pasted content: ", cbContent);
+            } catch (err) {
+                console.error("Failed to read clipboard contents: ", err);
+                cbContent = "Error : " + err;
+            }
+            return cbContent
+        }
+        getCBContents();
+    """
+    java_script_code = """
+        import { clipboard } from '@bumble/clipboard'
+        cbContent = await clipboard.readText();
+        return cbContent;
+    """
+    java_script_code1 = "async function getCBContents() { try { window.cb = await navigator.clipboard.readText(); console.log(\"Pasted content: \", window.cb); } catch (err) { console.error(\"Failed to read clipboard contents: \", err); window.cb = \"Error : \" + err; } } getCBContents();"
+    java_script_code2 = "return window.cb;"
+
+    logger = get_logger(get_clipboard_content.__name__, logging.INFO)
+    # clipboard_content = pyperclip.paste()
+    try:
+        browser.execute_async_script(java_script_code1)
+        time.sleep(3)
+        clipboard_content = browser.execute_script(java_script_code2)
+        # 'return navigator.clipboard.readText()')
+        logger.info(f"Clipboard content: {clipboard_content}")
+    except Exception as e:
+        logger.warning(f"Could not read clipboard content: {e}")
+        return None
+    return clipboard_content
+
+
 def get_post_url(browser):
     """
     The URL of a linkedIn post is not directly accessible. It needs to 
@@ -202,8 +248,9 @@ def get_post_url(browser):
         return None
     try:
         elements[0].click()
-        root = tk.Tk()
-        blog_post_url = root.clipboard_get()
+        # root = tk.Tk()
+        # blog_post_url = root.clipboard_get()
+        blog_post_url = get_clipboard_content(browser)
         logger.info(f"URL of blog post: {blog_post_url}")
         return blog_post_url
     except Exception as e:
@@ -351,7 +398,7 @@ def extract_blogs_from_container_elements(browser, container_elements):
     return blogs
 
 
-def get_blog_containers(browser=None, options=None):
+def get_blog_containers(options=None):
     force_retrieval = False
     if (options is not None) and ("force_retrieval" in options):
         force_retrieval = options["force_retrieval"]
@@ -360,12 +407,13 @@ def get_blog_containers(browser=None, options=None):
     if force_retrieval:
         logger.info(
             f"Retrieving blog containers: {force_retrieval=}")
-        if browser is None:
-            browser = create_loggedin_browser()
+        browser = create_loggedin_browser()
         container_elements, browser = retrieve_container_elements(
             browser, options=options)
         blog_containers = extract_blogs_from_container_elements(
             browser, container_elements)
+        logger.info("Quitting browser")
+        browser.quit()
         return blog_containers
     try:
         blog_containers = read_blog_containers_from_file()
@@ -373,10 +421,14 @@ def get_blog_containers(browser=None, options=None):
     except Exception as e:
         logger.warning(
             f"Could not read blog containers from file, retrieving from website")
+        browser = create_loggedin_browser()
         container_elements, browser = retrieve_container_elements(
             browser, options=options)
         blog_containers = extract_blogs_from_container_elements(
             browser, container_elements)
+        logger.info("Quitting browser")
+
+        browser.quit()
         write_blog_containers_to_file(blog_containers)
     return blog_containers
 
@@ -448,19 +500,6 @@ options = {
     "max_pages": 2
 }
 blog_posts = extract_all_from_containers(options=options)
-
-
-# if (len(blog_posts) != len(get_blog_containers())):
-#     logger.info(
-#         "Not all containers could be transformed to blog_posts! No of conatiner: {len(containers)}, no of blog posts: {len(blog_posts)}")
-
-
-# blog_post_index = 1
-# print(blog_posts[blog_post_index])
-# blog_posts
-
-
-# ## Saving blog posts to files
 
 
 save_blog_posts_to_file(blog_posts)
